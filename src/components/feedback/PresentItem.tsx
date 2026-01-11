@@ -46,25 +46,35 @@ export interface ParticipantItemProps {
 }
 
 // Helper function to format time to HH:MM:SS
-const formatTimeToHHMMSS = (dateTimeInput?: string | Date | number): string => {
-    if (dateTimeInput === null || typeof dateTimeInput === 'undefined') return "";
-    try {
-        const date = new Date(dateTimeInput);
-        if (isNaN(date.getTime())) {
-            return ""; // Invalid date
-        }
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        const seconds = date.getSeconds().toString().padStart(2, '0');
-        return `${hours}:${minutes}:${seconds}`;
-    } catch (error) {
-        console.error("Error formatting time:", error);
-        return "";
-    }
+// Hàm định dạng timestamp
+const formatRegistrationTime = (timestamp: number) => {
+    if (!timestamp) return '';
+    const dateObject = new Date(timestamp.toString().length < 11 ? timestamp * 1000 : timestamp);
+
+
+    // Lấy từng thành phần
+    const month = dateObject.getMonth() + 1; // Lấy tháng (0-11), nên phải +1
+    const day = dateObject.getDate(); // Lấy ngày, vd: 1
+
+    const hours = dateObject.getHours(); // Lấy giờ, vd: 17
+    const minutes = dateObject.getMinutes(); // Lấy phút, vd: 31
+
+    // Thêm số 0 đằng trước cho các số có 1 chữ số (ví dụ: 7 -> "07")
+    const paddedMonth = String(month).padStart(2, '0');
+    const paddedDay = String(day).padStart(2, '0');
+    const paddedHours = String(hours).padStart(2, '0');
+    const paddedMinutes = String(minutes).padStart(2, '0');
+
+
+    // Ghép thành chuỗi theo ý muốn
+    const customFormattedString = `${paddedHours}:${paddedMinutes}-${paddedDay}/${paddedMonth}`;
+
+    // Kết quả sẽ là: "Ngày 01/07/2025 lúc 17:31
+    return customFormattedString;
 };
 
 const ParticipantItem: React.FC<ParticipantItemProps> = ({ data }) => {
-    const formattedTime = data._ts ? formatTimeToHHMMSS(data._ts) : '';
+    const formattedTime = data.timestamp ? formatRegistrationTime(data.timestamp) : '';
 
     return (
         <Container>
@@ -90,9 +100,15 @@ const ParticipantItem: React.FC<ParticipantItemProps> = ({ data }) => {
                             backgroundColor: data.status === "yes" ? "rgba(18, 174, 226, 0.1)" : (data.status === "no" ? "orange" : "grey"),
                             color: data.status === "yes" ? "#12AEE2" : "white"
                         }}
-                    >
-                        <span>{data.status === "yes" ? "Đã đăng ký" : (data.status === "no" ? "Không tham gia" : "Không đăng ký")}</span>
-                        {data.status === "yes" && formattedTime && <span style={{ fontSize: '0.8em', marginTop: '2px' }}>{formattedTime}</span>}
+                    ><div style={{
+                        display: 'flex',
+                        flexDirection: 'column', // Xếp các phần tử theo chiều dọc
+                        alignItems: 'center'      // Căn giữa theo chiều ngang
+                    }}>
+                            <span>{data.status === "yes" ? "Đã đăng ký" : (data.status === "no" ? "Không tham gia" : "Không đăng ký")}</span>
+                            {data.status === "yes" && formattedTime && <span style={{ fontSize: '0.8em', marginTop: '2px' }}>{formattedTime}</span>}
+
+                        </div>
                     </FeedbackType>
                 </AvatarType>
             </HeaderContainer>

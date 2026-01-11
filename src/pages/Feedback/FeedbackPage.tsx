@@ -9,7 +9,7 @@ import Background from "@assets/background.png";
 
 const InfoContainer = styled(Box)`
     ${tw`bg-white flex items-center flex-col gap-4 `}
-    background-image: url(${Background});
+    background-image: url("https://picsum.photos/seed/daily/1920/1080");
     background-position: center;
     background-repeat: no-repeat;
 `;

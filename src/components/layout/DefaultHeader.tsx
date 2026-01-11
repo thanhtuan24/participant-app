@@ -17,7 +17,7 @@ const HeaderContainer = styled(Header)`
             rgba(4, 109, 214, 0.9),
             rgba(4, 109, 214, 0.9)
         ),
-        url(${Background});
+        url("${Background}");
     background-size: cover;
     background-position: center;
     .zaui-btn-icon {

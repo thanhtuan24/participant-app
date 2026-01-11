@@ -37,18 +37,7 @@ const PresentList = React.forwardRef<HTMLDivElement, ParticipantListProps>(
         
         const sortedData = useMemo(() => {
             if (!data || data.length === 0) return [];
-            return [...data].sort((a, b) => {
-                const dateA = a._ts ? new Date(a._ts) : null;
-                const dateB = b._ts ? new Date(b._ts) : null;
-
-                // getTime() returns NaN for invalid dates, (e.g. new Date(null) or new Date(""))
-                // Treat NaN or missing times as Infinity to push them to the end in ascending sort
-                const timeA = dateA && !isNaN(dateA.getTime()) ? dateA.getTime() : Infinity;
-                const timeB = dateB && !isNaN(dateB.getTime()) ? dateB.getTime() : Infinity;
-
-                if (timeA === Infinity && timeB === Infinity) return 0; // Preserve original order for items without valid time
-                return timeA - timeB; // Ascending sort
-            });
+            return [...data];
         }, [data]);
 
         return (

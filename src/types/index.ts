@@ -137,7 +137,7 @@ export type PartiItem = {
     numberRegistered: 0;
     status?: string;
     isMember: true;
-    _ts : number;
+    timestamp : number;
 };
 
 export type ScheduleAppointmentStatus = "pending" | "rejected" | "approved";

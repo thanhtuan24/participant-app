@@ -13,7 +13,6 @@ export const API = {
     GET_SCHEDULE: "/get_schedule_api",
 };
 export const HTTP_FUNCTION_URL = "https://api-cs746yvp2q-as.a.run.app";
-//https://az-204-fa.azurewebsites.net/api/HttpTrigger1?code=UZMD-hgJeNnIgPE8sd75na5vVztEZpHQmgo_-h8LqDTIAzFuP6BpnA%3D%3D
 export const SEARCH_NOT_FOUND = "Không tìm thấy thông tin";
 
 export const TOTAL_ARTICLES_PER_PAGE = 10;

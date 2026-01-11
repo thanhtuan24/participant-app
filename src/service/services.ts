@@ -10,7 +10,8 @@ import {
     PartiItem,
     Profile,
     ScheduleAppointment,
-    ScheduleAppointmentStatus} from "@dts/index";
+    ScheduleAppointmentStatus
+} from "@dts/index";
 import {
     API,
     TOTAL_ARTICLES_PER_PAGE,
@@ -20,8 +21,7 @@ import {
 } from "@constants/common";
 import { generatePath } from "@utils/string";
 import { formatDate } from "@utils/date-time";
-//import axios from "axios";
-import { request,requestParticipant } from "./request";
+import { request, requestParticipant } from "./request";
 
 export interface GetOrganizationParams {
     miniAppId: string;
@@ -314,7 +314,7 @@ export const getTodayParticipant = async (
     participantDate: string,
 ): Promise<PartiItem[]> => {
     try {
-        const response = await fetch(`${HTTP_FUNCTION_URL  }?participantDate=${  participantDate}`);
+        const response = await fetch(`${HTTP_FUNCTION_URL}?participantDate=${participantDate}`);
         if (!response.ok) {
             throw new Error('Network response was not ok');
 
@@ -336,9 +336,6 @@ export const getFullParticipant = async (
             throw new Error('Network response was not ok');
 
         } const data = await response.json();
-        // const items = data.map((item, index) => {
-        //     console.log(`Item ${index}:`, item);
-        //   });
         return data;
         // Process your response here 
     } catch (error) {
@@ -348,10 +345,10 @@ export const getFullParticipant = async (
 };
 
 export const getUserParticipant = async (
-    userID:string,
+    userID: string,
 ): Promise<PartiItem[]> => {
     try {
-        const response = await fetch(`${HTTP_FUNCTION_URL  }?userID=${  userID}`);
+        const response = await fetch(`${HTTP_FUNCTION_URL}?userID=${userID}`);
         if (!response.ok) {
             throw new Error('Network response was not ok');
 
@@ -364,20 +361,37 @@ export const getUserParticipant = async (
     }
 };
 
+// Hàm getAppConfig được viết lại theo phong cách bạn yêu cầu
+export const getAppConfig = async (): Promise<{ mainTitle: string }> => {
+    try {
+        // Tạo URL với query parameter `getConfig=true`
+        const response = await fetch(`${HTTP_FUNCTION_URL}?getConfig=true`);
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok for getConfig');
+        }
+
+        const data = await response.json();
+        return data;
+
+    } catch (error) {
+        console.error('Error fetching app config:', error);
+        // Trả về một giá trị mặc định để ứng dụng không bị lỗi
+        return { mainTitle: 'Sân Cao Đẳng Thương Mại 05:00 -> 07:00' };
+    }
+};
+
 
 export const registerDate = async (data) => {
     try {
         const response = await requestParticipant("POST", HTTP_FUNCTION_URL, data);
         console.log('Response:', response); // Process your response here
         return true;
-   } catch (error) {
-       console.error('Error posting data:', error);
-       return false;
-   }
+    } catch (error) {
+        console.error('Error posting data:', error);
+        return false;
+    }
 };
-
-
-
 
 export interface CreateWorkScheduleParams {
     organizationId: string;

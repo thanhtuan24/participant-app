@@ -21,7 +21,7 @@ const HeaderContainer = styled.div`
             rgba(4, 109, 214, 0.9),
             rgba(4, 109, 214, 0.9)
         ),
-        url(${Background});
+        url("https://picsum.photos/seed/daily/1920/1080");
     background-size: cover;
     background-position: center;
 `;

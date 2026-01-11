@@ -51,7 +51,6 @@ export async function request<T>(
         try {
             const accessToken = await getToken();
             store.setState(state => ({ ...state, token: accessToken }));
-            // return request(method, url, data, options, retryCount + 1);
         } catch (err) {
             throw new Error((err as any).message);
         }
