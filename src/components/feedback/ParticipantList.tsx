@@ -2,6 +2,7 @@
 import EmptyDataContainer from "@components/common/EmptyDataContainer";
 import FeedbackItemSkeleton from "@components/skeleton/FeedbackItemSkeleton";
 import {  PartiItem } from "@dts";
+import { useStore } from "@store";
 import React from "react";
 import styled from "styled-components";
 import tw from "twin.macro";
@@ -27,12 +28,16 @@ export interface ParticipantListProps {
 const ParticipantList = React.forwardRef<HTMLDivElement, ParticipantListProps>(
     (props, ref) => {
         const { data, loading = true } = props;
+        const { financeSummary } = useStore();
 
         return (
             <Wrapper id="feedbackList" ref={ref}>
                 {data.map((item, index) => (
                     <div key={`fb-item-${item.participantDate}`}>
-                        <ParticipantItem data={item} />
+                        <ParticipantItem 
+                            data={item} 
+                            isPaid={financeSummary.paidMembers?.includes(item.userID)}
+                        />
 
                         {index !== data.length - 1 && <Hr />}
                     </div>

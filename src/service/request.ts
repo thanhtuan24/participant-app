@@ -7,13 +7,13 @@ import { getToken } from "./zalo";
 interface FetchOptions {
     useAuth?: boolean;
     baseUrl?: string;
-    customHeader?: object;
+    customHeader?: Record<string, string>;
 }
 
 export async function request<T>(
     method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
     url: string,
-    data?: any,
+    data?: Record<string, any>,
     options?: FetchOptions,
     retryCount = 0,
 ): Promise<T> {
@@ -26,25 +26,23 @@ export async function request<T>(
     }
     if (options && options.customHeader) {
         const { customHeader } = options;
-        Object.keys(customHeader).forEach(key => {
-            headers.append(key, `${customHeader[key]}`);
+        Object.entries(customHeader).forEach(([key, value]) => {
+            headers.append(key, value);
         });
     }
     const requestUrl = new URL(url, baseUrl);
-    const requestOptions: { [key: string]: any } = {
+    const requestOptions: RequestInit = {
         method,
         headers,
     };
 
-    if (method === "GET") {
+    if (method === "GET" && data) {
         requestUrl.search = new URLSearchParams(data).toString();
-    } else {
+    } else if (data) {
         headers.append("Content-Type", "application/json");
         requestOptions.body = JSON.stringify(data);
     }
-    const response = await fetch(requestUrl.toString(), {
-        ...requestOptions,
-    });
+    const response = await fetch(requestUrl.toString(), requestOptions);
 
     const resData = (await response.json()) as ResData<T>;
     if (resData.err === UNAUTHORIZED && retryCount === 0 && useAuth && token) {
@@ -52,12 +50,13 @@ export async function request<T>(
             const accessToken = await getToken();
             store.setState(state => ({ ...state, token: accessToken }));
         } catch (err) {
-            throw new Error((err as any).message);
+            throw new Error(err instanceof Error ? err.message : String(err));
         }
     }
     if (resData.err || !resData.data) {
-        // eslint-disable-next-line no-throw-literal
-        throw { code: resData.err, message: resData.message };
+        const error = new Error(resData.message || "Unknown Error");
+        (error as any).code = resData.err;
+        throw error;
     }
     return resData.data;
 }
@@ -65,37 +64,35 @@ export async function request<T>(
 export async function requestParticipant<T>(
     method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
     url: string,
-    data?: any,
+    data?: Record<string, any>,
     options?: FetchOptions,
 ): Promise<T> {
     const headers = new Headers();
     if (options && options.customHeader) {
         const { customHeader } = options;
-        Object.keys(customHeader).forEach(key => {
-            headers.append(key, `${customHeader[key]}`);
+        Object.entries(customHeader).forEach(([key, value]) => {
+            headers.append(key, value);
         });
     }
     const requestUrl = new URL(url);
-    const requestOptions: { [key: string]: any } = {
+    const requestOptions: RequestInit = {
         method,
         headers,
     };
 
-    if (method === "GET") {
+    if (method === "GET" && data) {
         requestUrl.search = new URLSearchParams(data).toString();
-    } else {
-        console.log(data);
+    } else if (data) {
         headers.append("Content-Type", "application/json");
         requestOptions.body = JSON.stringify(data);
     }
-    const response = await fetch(requestUrl.toString(), {
-        ...requestOptions,
-    });
+
+    const response = await fetch(requestUrl.toString(), requestOptions);
     try {
-    const resData = (await response.json()) as ResData<T>;
-    return resData;
+        const resData = (await response.json()) as ResData<T>;
+        return resData as unknown as T;
     } catch (error) {
-        // eslint-disable-next-line no-throw-literal
-        throw { code: error, message: error.message };
+        const err = new Error(error instanceof Error ? error.message : String(error));
+        throw err;
     }
 }

@@ -43,6 +43,7 @@ const Content = styled.div`
 
 export interface ParticipantItemProps {
     data: PartiItem;
+    isPaid?: boolean;
 }
 
 // Helper function to format time to HH:MM:SS
@@ -73,7 +74,7 @@ const formatRegistrationTime = (timestamp: number) => {
     return customFormattedString;
 };
 
-const ParticipantItem: React.FC<ParticipantItemProps> = ({ data }) => {
+const ParticipantItem: React.FC<ParticipantItemProps> = ({ data, isPaid }) => {
     const formattedTime = data.timestamp ? formatRegistrationTime(data.timestamp) : '';
 
     return (
@@ -82,8 +83,16 @@ const ParticipantItem: React.FC<ParticipantItemProps> = ({ data }) => {
                 <TimeContainer>
                     <UsernameText>{(data.username)}</UsernameText>
                     {/* <Icon size={15} icon="zi-clock-1" /> */}
-                    <SmallText style={{ color: data.isMember ? "#4AB5AA" : "orange" }}>{data.isMember ? "Thành viên" : "Vãng lai"}</SmallText>
-
+                    <div className="flex items-center gap-2">
+                         <SmallText style={{ color: data.isMember ? "#4AB5AA" : "orange" }}>{data.isMember ? "Thành viên" : "Vãng lai"}</SmallText>
+                         {isPaid && (
+                            <div className="flex items-center gap-1 text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full border border-green-200">
+                                <Icon icon="zi-check-circle-solid" size={12} />
+                                <span className="text-[9px] font-bold">ĐÃ ĐÓNG QUỸ</span>
+                            </div>
+                         )}
+                    </div>
+                    
                     {data.isMember ?
                         (<SmallText style={{ color: data.numberRegistered > 7 ? "#00FF77" : data.numberRegistered > 3 ? "#F3DA74" : "red" }}>Số ngày đã đi:{data.numberRegistered}</SmallText>)
                         : (

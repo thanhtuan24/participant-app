@@ -8,7 +8,7 @@ function WithItemClick<T>(Component: ComponentType<T & object>) {
         const navigate = useNavigate();
         const { openSnackbar } = useSnackbar();
 
-        const handleClickUtinity = ({
+        const handleClickUtility = ({
             inDevelopment,
             path,
             phoneNumber,
@@ -47,7 +47,7 @@ function WithItemClick<T>(Component: ComponentType<T & object>) {
                 }
             }
         };
-        return <Component {...props} handleClickUtinity={handleClickUtinity} />;
+        return <Component {...props} handleClickUtility={handleClickUtility} />;
     };
 }
 

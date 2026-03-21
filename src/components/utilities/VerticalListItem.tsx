@@ -4,11 +4,11 @@ import tw from "twin.macro";
 import { List } from "zmp-ui";
 
 import { ImageIcon } from "@components/icons";
-import { Utinity } from "@dts";
+import { Utility } from "@dts";
 import WithItemClick from "./WithItemClick";
 
-export interface ItemProps extends Utinity {
-    handleClickUtinity?: ({
+export interface ItemProps extends Utility {
+    handleClickUtility?: ({
         inDevelopment,
         path,
         phoneNumber,
@@ -32,14 +32,14 @@ const StyledListItem = styled(List.Item)`
     }
 `;
 
-const UtinityItem: FunctionComponent<ItemProps> = props => {
-    const { iconSrc, label, handleClickUtinity } = props;
+const UtilityItem: FunctionComponent<ItemProps> = props => {
+    const { iconSrc, label, handleClickUtility } = props;
 
     const handleClick = (
         event: React.MouseEvent<HTMLDivElement, MouseEvent>,
     ) => {
         event.preventDefault();
-        handleClickUtinity?.(props);
+        handleClickUtility?.(props);
     };
 
     return (
@@ -51,4 +51,4 @@ const UtinityItem: FunctionComponent<ItemProps> = props => {
     );
 };
 
-export default WithItemClick(UtinityItem);
+export default WithItemClick(UtilityItem);

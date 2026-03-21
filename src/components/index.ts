@@ -1,4 +1,4 @@
-export { default as App } from "./app";
+export { default as App } from "./App";
 export * from "./layout";
 export { default as UserInfo } from "../pages/Home/UserInfo";
 export * from "./utilities";

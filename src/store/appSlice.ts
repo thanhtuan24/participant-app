@@ -26,7 +26,6 @@ const appSlice: StateCreator<AppSlice, [], [], AppSlice> = (set, get) => ({
     }, 5000)();
   },
 
-  // === BƯỚC 1.2: THÊM STATE VÀ ACTION MỚI CHO ZUSTAND ===
   mainTitle: 'Sân Cầu Lông G7', // Title mặc định
   configStatus: 'idle',
   

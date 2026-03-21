@@ -1,6 +1,7 @@
 /* eslint-disable no-nested-ternary */
 import EmptyDataContainer from "@components/common/EmptyDataContainer";
 import {  PartiItem } from "@dts";
+import { useStore } from "@store";
 import React, { useMemo } from "react";
 import styled from "styled-components";
 import tw from "twin.macro";
@@ -34,6 +35,7 @@ export interface ParticipantListProps {
 const PresentList = React.forwardRef<HTMLDivElement, ParticipantListProps>(
     (props, ref) => {
         const { data, loading = true } = props;
+        const { financeSummary } = useStore();
         
         const sortedData = useMemo(() => {
             if (!data || data.length === 0) return [];
@@ -44,7 +46,10 @@ const PresentList = React.forwardRef<HTMLDivElement, ParticipantListProps>(
             <Wrapper id="feedbackList" ref={ref}>
                 {sortedData.map((item, index) => (
                     <div key={`fb-item-${item.userID}`} >
-                        <PresentItem data={item} />
+                        <PresentItem 
+                            data={item} 
+                            isPaid={financeSummary.paidMembers?.includes(item.userID)}
+                        />
                         {index !== sortedData.length - 1 && <Hr />}
                     </div>
                 ))}

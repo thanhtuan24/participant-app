@@ -1,46 +1,22 @@
-import React, { useState, useEffect, FunctionComponent } from "react";
-import styled from "styled-components";
-import tw from "twin.macro";
+import React, { FunctionComponent } from "react";
 import { Box, Text } from "zmp-ui";
 import Background from "@assets/background.png";
 import { useStore } from "@store";
 import { AvatarSkeleton, TextItemSkeleton } from "@components/skeleton";
-import { participantDate } from "@constants/utinities";
-import { getTodayParticipant } from "@service/services";
+import { participantDate } from "@constants/utilities";
 import { formatDate } from "@utils/date-time";
 
+interface RegisteredInfoProps {
+    data: number;
+    loading?: boolean;
+}
 
-const Wrapper = styled.div`
-    ${tw`flex flex-col items-center`};
-    background-image: url("${Background}");
-    background-position: center;
-    padding: 24px 0;
-`;
-
-const FeedbackType = styled.div`
-    ${tw` border-[#D7EDFF] border w-fit px-2 py-0.5 text-[#046DD6] rounded-xl font-medium h-fit`}
-`;
-
-const TextName = styled(Text)`
-    color: #141415;
-    font-weight: 500;
-`;
-
-const RegisteredInfo: FunctionComponent = (props) => {
-    // === BƯỚC 1: LẤY mainTitle TỪ STORE ===
+const RegisteredInfo: FunctionComponent<RegisteredInfoProps> = (props) => {
     // Lấy user và mainTitle từ store theo cách dễ đọc hơn
-    const { user, mainTitle } = useStore(state => ({
-        user: state.user,
+    const { mainTitle } = useStore(state => ({
         mainTitle: state.mainTitle
     }));
     const { data, loading = true } = props;
-
-    // useEffect(() => {
-    //     updateTodayParticipant();
-    //   }, []);
-    // const [isloading, setIsLoading] = useState<boolean>(true);
-
-    // const [todayParticipant, setTodayParticipant] = useState<number>(0);
 
     const renderSkeleton = () => (
         <>
@@ -48,47 +24,41 @@ const RegisteredInfo: FunctionComponent = (props) => {
                 <AvatarSkeleton size={48} />
             </Box>
             <TextItemSkeleton height={22} width={120} />
-            <FeedbackType
-                style={{
-                    backgroundColor: "white",
-                    color: "#12AEE2"
-                }}
+            <div
+                 className="bg-white border-[#D7EDFF] border w-fit px-2 py-0.5 text-[#046DD6] rounded-xl font-medium h-fit"
             >
                 Đang cập nhật dữ liệu
-            </FeedbackType>
+            </div>
         </>
     );
 
-    // const updateTodayParticipant = async() => {
-    //     console.log(`Parti:${participantDate()}`);
-    //     const numberParticipant = await getTodayParticipant(participantDate());
-    //     setTodayParticipant(numberParticipant.length);
-    //     setIsLoading(false);
-    //     return numberParticipant;
-    // }
     return (
-        <Wrapper>
+        <div
+            className="flex flex-col items-center py-6 bg-center bg-no-repeat bg-cover"
+            style={{ backgroundImage: `url("${Background}")` }}
+        >
             {!loading && (
                 <>
-                    {/* === BƯỚC 2: HIỂN THỊ mainTitle Ở ĐÂY === */}
                     <Box mb={1}>
-                        <Text color="white" bold size="xLarge" className="tracking-wide">
-                            {"San CDTM 🇻🇳 🔞23:08➡23:08"}
+                        <Text color="white" bold size="xLarge" className="tracking-wide text-center">
+                            {mainTitle}
                         </Text>
                     </Box>
 
                     {/* Phần hiển thị ngày và số lượng tham gia */}
-                    <Box className="flex">
-                        <TextName color="#ffff33" bold size="xLarge">Ngày {formatDate(new Date(participantDate()), 'dd/mm/yyyy')}</TextName>
+                    <div className="flex flex-col items-center gap-1">
+                        <Text className="font-medium text-[#ffff33] text-xl font-bold">
+                            Ngày {formatDate(new Date(participantDate()), 'dd/mm/yyyy')}
+                        </Text>
 
-                        <TextName align="center" color="#ffff33" bold size="xLarge">Tham gia: {data}</TextName>
-                    </Box>
-
-                    { }
+                        <Text className="text-center text-[#ffff33] text-xl font-bold">
+                            Tham gia: {data}
+                        </Text>
+                    </div>
                 </>
             )}
             {loading && renderSkeleton()}
-        </Wrapper>
+        </div>
     );
 };
 

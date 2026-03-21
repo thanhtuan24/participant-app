@@ -7,7 +7,7 @@ import { openChat } from "zmp-sdk";
 
 import WithItem from "./WithItemClick";
 
-export interface UtinityItemProps {
+export interface UtilityItemProps {
     label?: string;
     icon?: React.ElementType<any>;
     path?: string;
@@ -15,7 +15,7 @@ export interface UtinityItemProps {
     inDevelopment?: boolean;
     phoneNumber?: string;
     link?: string;
-    handleClickUtinity?: ({
+    handleClickUtility?: ({
         inDevelopment,
         path,
         phoneNumber,
@@ -53,8 +53,8 @@ const Label = styled(Text)`
     margin-top: 8px;
 `;
 
-const UtinityItem: FunctionComponent<UtinityItemProps> = props => {
-    const { icon: Icon, label, handleClickUtinity } = props;
+const UtilityItem: FunctionComponent<UtilityItemProps> = props => {
+    const { icon: Icon, label, handleClickUtility } = props;
 
     const handleClick = (
         event: React.MouseEvent<HTMLDivElement, MouseEvent>,
@@ -66,7 +66,7 @@ const UtinityItem: FunctionComponent<UtinityItemProps> = props => {
         //     message: 'Hello',
         //     fail: (err) => { console.error  ("Lỗi mở Zalo:", err); }
         //   });
-        handleClickUtinity?.(props);
+        handleClickUtility?.(props);
     };
 
     return (
@@ -83,4 +83,4 @@ const UtinityItem: FunctionComponent<UtinityItemProps> = props => {
     );
 };
 
-export default WithItem(UtinityItem);
+export default WithItem(UtilityItem);

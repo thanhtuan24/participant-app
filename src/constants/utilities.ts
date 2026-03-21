@@ -1,5 +1,5 @@
 import * as Icon from "@components/icons";
-import { Utinity } from "@dts";
+import { Utility } from "@dts";
 import SocialInsuranceLogo from "@assets/logo-social-insurance.png";
 import Youtube from "@assets/youtube.png";
 import Location from "@assets/location.png";
@@ -26,7 +26,7 @@ export const participantDate = () => {
     return date;
 }
 const currentDateRegister = `Đăng ký tham gia`;
-export const APP_UTINITIES: Array<Utinity> = [
+export const APP_UTILITIES: Array<Utility> = [
     {
         key: "feedback",
         label: currentDateRegister,
@@ -53,7 +53,7 @@ export const APP_UTINITIES: Array<Utinity> = [
     // },
 ];
 
-export const CONTACTS: Array<Utinity> = [
+export const CONTACTS: Array<Utility> = [
     {
         key: "social-insurance",
         label: "BHXH TP Thủ Đức",
@@ -92,7 +92,7 @@ export const CONTACTS: Array<Utinity> = [
     },
 ];
 
-export const PROCEDURES: Array<Utinity> = [
+export const PROCEDURES: Array<Utility> = [
     {
         key: "renew",
         label: "Gia hạn thẻ BHYT trực tuyến",

@@ -25,6 +25,11 @@ export const SCHEDULE_APPOINTMENT_STATUS = {
     APPROVED: "approved",
 };
 
+export const PARTICIPANT_STATUS = {
+    YES: "yes",
+    NO: "no",
+} as const;
+
 export const MAX_FEEDBACK_IMAGES = 4;
 export const CURRENT_DATE = new Date();
 export const FORMAT_DATE =  "yyyy-mm-dd";
