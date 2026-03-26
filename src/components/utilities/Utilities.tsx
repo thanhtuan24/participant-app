@@ -1,25 +1,19 @@
 import React, { FunctionComponent } from "react";
-import styled from "styled-components";
-import tw from "twin.macro";
 import UtilityItem, { UtilityItemProps } from "./UtilityItem";
 
 interface UtilitiesProps {
     utilities: UtilityItemProps & { key: string }[];
 }
 
-const UtilitiesWrapper = styled.div`
-    ${tw`flex flex-row flex-wrap justify-between bg-ui_bg`};
-    padding: 0 16px 16px 16px;
-`;
 const Utilities: FunctionComponent<UtilitiesProps> = props => {
     const { utilities } = props;
     return (
-        <UtilitiesWrapper>
+        <div className="grid grid-cols-2 gap-3 px-4 py-3 bg-white">
             {utilities.map(item => {
                 const { key, ...utility } = item;
                 return <UtilityItem key={key} {...utility} />;
             })}
-        </UtilitiesWrapper>
+        </div>
     );
 };
 

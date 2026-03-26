@@ -1,8 +1,5 @@
 /* eslint-disable react/no-unused-prop-types */
 import React, { FunctionComponent } from "react";
-import styled from "styled-components";
-import tw from "twin.macro";
-import { Text } from "zmp-ui";
 import { openChat } from "zmp-sdk";
 
 import WithItem from "./WithItemClick";
@@ -28,31 +25,6 @@ export interface UtilityItemProps {
     }) => void;
 }
 
-const Wrapper = styled.div`
-    ${tw`flex flex-col items-center p-1 mb-2`};
-    width: calc(calc(50%) - 12px);
-    &:not(:nth-child(2n)) {
-        margin-right: 12px;
-    }
-`;
-const IconWrapper = styled.div`
-    ${tw`rounded-2xl bg-icon_bg relative`};
-    width: 100%;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    height: 95px;
-`;
-
-const CenterIcon = styled.div`
-    ${tw`inline-block `};
-`;
-
-const Label = styled(Text)`
-    ${tw`text-center`};
-    margin-top: 8px;
-`;
-
 const UtilityItem: FunctionComponent<UtilityItemProps> = props => {
     const { icon: Icon, label, handleClickUtility } = props;
 
@@ -60,26 +32,23 @@ const UtilityItem: FunctionComponent<UtilityItemProps> = props => {
         event: React.MouseEvent<HTMLDivElement, MouseEvent>,
     ) => {
         event.preventDefault();
-        //  openChat({
-        //     type: 'user',
-        //     id: '1827485555371003384',
-        //     message: 'Hello',
-        //     fail: (err) => { console.error  ("Lỗi mở Zalo:", err); }
-        //   });
         handleClickUtility?.(props);
     };
 
     return (
-        <Wrapper onClick={handleClick}>
+        <div
+            className="flex flex-col items-center rounded-xl bg-[#F5F9FC] py-4 px-2 active:bg-[#E8F0F8] transition-colors cursor-pointer shadow-sm"
+            onClick={handleClick}
+        >
             {Icon && (
-                <IconWrapper>
-                    <CenterIcon>
-                        <Icon />
-                    </CenterIcon>
-                </IconWrapper>
+                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm mb-2">
+                    <Icon />
+                </div>
             )}
-            <Label size="normal" bold>{label}</Label>
-        </Wrapper>
+            <span className="text-sm font-semibold text-center text-[#141415] leading-tight">
+                {label}
+            </span>
+        </div>
     );
 };
 

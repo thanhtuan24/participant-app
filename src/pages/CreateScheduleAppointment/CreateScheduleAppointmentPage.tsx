@@ -3,6 +3,7 @@ import PageLayout from "@components/layout/PageLayout";
 import { useStore } from "@store";
 import { useNavigate } from "zmp-ui";
 import ParticipantSection from "@components/feedback/ParticipantSection";
+import RestrictedAccess from "@components/common/RestrictedAccess";
 
 const CreateScheduleAppointmentPage: FC<any> = () => {
     const getUser = useStore(state => state.getUserInfo);
@@ -10,6 +11,10 @@ const CreateScheduleAppointmentPage: FC<any> = () => {
     const [user] = useStore(state => [
         state.user,
     ]);
+    const { enableRichFeatures, isAuthorizedMember } = useStore(state => ({
+        enableRichFeatures: state.enableRichFeatures,
+        isAuthorizedMember: state.isAuthorizedMember,
+    }));
     const navigate = useNavigate();
     const getSchedule = useStore(state => state.getSchedule);
     const [schedule, gettingSchedule] = useStore(state => [
@@ -34,6 +39,15 @@ const CreateScheduleAppointmentPage: FC<any> = () => {
             });
         }
     }, [gettingSchedule, schedule]);
+
+    // Nếu enableRichFeatures bật và không phải member → restricted
+    if (enableRichFeatures && isAuthorizedMember === false) {
+        return (
+            <PageLayout title="Danh sách đăng ký">
+                <RestrictedAccess />
+            </PageLayout>
+        );
+    }
 
     if (!gettingSchedule && schedule) {
         return null;

@@ -56,13 +56,15 @@ input group "Indicator: Awesome Oscillator"
 input bool               UseAO             = false;       // Enable AO Alert
 input ENUM_TIMEFRAMES    AO_Timeframe      = PERIOD_CURRENT; // AO Timeframe
 
-input group "Strategy: AO + Williams %R (M1 Reversal)"
-input bool               UseStrategy_AOWPR       = true;       // Enable Strategy Alert
-input ENUM_TIMEFRAMES    AOWPR_Timeframe         = PERIOD_M1;  // Strategy Timeframe
-input int                AOWPR_WPR_Period        = 14;         // WPR Period
-input double             AOWPR_WPR_OB            = -20.0;      // Overbought Level
-input double             AOWPR_WPR_OS            = -80.0;      // Oversold Level
-input int                AOWPR_Div_Lookback      = 30;         // Divergence Lookback Bars
+input group "Strategy: AO + WPR + BB (M1 Reversal)"
+input bool               UseStrategy_ExtReversal = true;       // Enable Alert
+input ENUM_TIMEFRAMES    Ext_Timeframe         = PERIOD_M1;  // Strategy Timeframe
+input int                Ext_WPR_Period        = 14;         // WPR Period
+input double             Ext_WPR_OB            = -20.0;      // Overbought Level
+input double             Ext_WPR_OS            = -80.0;      // Oversold Level
+input int                Ext_BB_Period         = 20;         // BB Length (EMA)
+input double             Ext_BB_StdDev         = 2.0;        // BB StdDev
+input ENUM_APPLIED_PRICE Ext_BB_Price          = PRICE_CLOSE;// BB Price Source
 
 //===================================================================
 // START: TS_AllInOne Strategy Inputs
@@ -147,6 +149,8 @@ int      hWPR          = INVALID_HANDLE;
 int      hAO           = INVALID_HANDLE;
 int      hAO_Strat     = INVALID_HANDLE;
 int      hWPR_Strat    = INVALID_HANDLE;
+int      hEMA_Strat    = INVALID_HANDLE;
+int      hSTD_Strat    = INVALID_HANDLE;
 datetime LastPatternTime = 0;
 
 // Strategy Globals
@@ -161,9 +165,8 @@ MqlTick  lastTick;
 bool SendDiscordAlert(string text);
 string JsonEscape(string text);
 string CheckWilliamsR();
-string CheckWilliamsR();
 string CheckAO();
-string CheckStrategy_AOWPR();
+string CheckStrategy_ExtReversal();
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -200,12 +203,15 @@ int OnInit()
       if(hAO == INVALID_HANDLE) { Print("Error: Failed to create AO indicator handle!"); return(INIT_FAILED); }
      }
 
-   // Initialize Strategy AO + WPR
-   if(UseStrategy_AOWPR)
+   // Initialize Strategy AO + WPR + BB
+   if(UseStrategy_ExtReversal)
      {
-      hAO_Strat = iAO(_Symbol, AOWPR_Timeframe);
-      hWPR_Strat = iWPR(_Symbol, AOWPR_Timeframe, AOWPR_WPR_Period);
-      if(hAO_Strat == INVALID_HANDLE || hWPR_Strat == INVALID_HANDLE)
+      hAO_Strat  = iAO(_Symbol, Ext_Timeframe);
+      hWPR_Strat = iWPR(_Symbol, Ext_Timeframe, Ext_WPR_Period);
+      hEMA_Strat = iMA(_Symbol, Ext_Timeframe, Ext_BB_Period, 0, MODE_EMA, Ext_BB_Price);
+      hSTD_Strat = iStdDev(_Symbol, Ext_Timeframe, Ext_BB_Period, 0, MODE_SMA, Ext_BB_Price);
+
+      if(hAO_Strat == INVALID_HANDLE || hWPR_Strat == INVALID_HANDLE || hEMA_Strat == INVALID_HANDLE || hSTD_Strat == INVALID_HANDLE)
         {
          Print("Error: Failed to create Strategy Indicator Handles!");
          return(INIT_FAILED);
@@ -233,6 +239,8 @@ void OnDeinit(const int reason)
    if(hAO != INVALID_HANDLE) IndicatorRelease(hAO);
    if(hAO_Strat != INVALID_HANDLE) IndicatorRelease(hAO_Strat);
    if(hWPR_Strat != INVALID_HANDLE) IndicatorRelease(hWPR_Strat);
+   if(hEMA_Strat != INVALID_HANDLE) IndicatorRelease(hEMA_Strat);
+   if(hSTD_Strat != INVALID_HANDLE) IndicatorRelease(hSTD_Strat);
   }
 
 //+------------------------------------------------------------------+
@@ -798,10 +806,10 @@ void OnTick()
       if(aoMsg != "") { triggerAlert = true; triggerSource = aoMsg; }
      }
 
-   // 6. Check Strategy AO+WPR
-   if(!triggerAlert && UseStrategy_AOWPR)
+   // 6. Check Strategy Ext Reversal (AO + WPR + BB)
+   if(!triggerAlert && UseStrategy_ExtReversal)
      {
-      string stratMsg = CheckStrategy_AOWPR();
+      string stratMsg = CheckStrategy_ExtReversal();
       if(stratMsg != "") { triggerAlert = true; triggerSource = stratMsg; }
      }
 
@@ -1052,119 +1060,61 @@ string CheckAO()
   }
 
 //+------------------------------------------------------------------+
-//| Strategy: AO + Williams %R                                       |
+//| Strategy: AO + Williams %R + Bollinger Bands EMA                 |
 //+------------------------------------------------------------------+
-string CheckStrategy_AOWPR()
+string CheckStrategy_ExtReversal()
   {
-   if(hAO_Strat == INVALID_HANDLE || hWPR_Strat == INVALID_HANDLE) return "";
+   if(hAO_Strat == INVALID_HANDLE || hWPR_Strat == INVALID_HANDLE || hEMA_Strat == INVALID_HANDLE || hSTD_Strat == INVALID_HANDLE) return "";
 
    double wpr[];
    double ao[];
+   double ema[];
+   double std_dev[];
    double low[], high[];
+   
    ArraySetAsSeries(wpr,true);
    ArraySetAsSeries(ao,true);
+   ArraySetAsSeries(ema,true);
+   ArraySetAsSeries(std_dev,true);
    ArraySetAsSeries(low,true);
    ArraySetAsSeries(high,true);
    
-   // Need Lookback+5 bars for safety
-   int count = AOWPR_Div_Lookback + 5;
+   // Need 3 bars to check previous AO
+   int count = 3;
    
-   if(CopyBuffer(hWPR_Strat, 0, 0, 3, wpr)<3) return "";
+   if(CopyBuffer(hWPR_Strat, 0, 0, count, wpr)<count) return "";
    if(CopyBuffer(hAO_Strat, 0, 0, count, ao)<count) return "";
-   if(CopyLow(_Symbol, AOWPR_Timeframe, 0, count, low)<count) return "";
-   if(CopyHigh(_Symbol, AOWPR_Timeframe, 0, count, high)<count) return "";
+   if(CopyBuffer(hEMA_Strat, 0, 0, count, ema)<count) return "";
+   if(CopyBuffer(hSTD_Strat, 0, 0, count, std_dev)<count) return "";
+   if(CopyLow(_Symbol, Ext_Timeframe, 0, count, low)<count) return "";
+   if(CopyHigh(_Symbol, Ext_Timeframe, 0, count, high)<count) return "";
    
    // Use Shift 1 (Closed Bar) as signal candle
    int shift = 1;
 
-   // ---------------- BULLISH SETUP ----------------
-   // Trigger: WPR Cross Up -80 (Exit Oversold)
-   // WPR[2] <= -80, WPR[1] > -80
-   bool wprCrossUp = (wpr[shift+1] <= AOWPR_WPR_OS && wpr[shift] > AOWPR_WPR_OS);
+   // 1. Calculations
+   double bb_lower = ema[shift] - (Ext_BB_StdDev * std_dev[shift]);
+   double bb_upper = ema[shift] + (Ext_BB_StdDev * std_dev[shift]);
    
-   // AO Confirmation: Green (Rising)
-   bool aoGreen = (ao[shift] > ao[shift+1]);
-   
-   if(wprCrossUp && aoGreen)
+   // 2. Buy Setup
+   bool buyCondition = (low[shift] <= bb_lower) && 
+                       (wpr[shift] < Ext_WPR_OS) && 
+                       (ao[shift] > ao[shift+1]); // AO > AO_prev (Green)
+                       
+   if(buyCondition)
      {
-      // Divergence Check (Bullish)
-      // Price: Lower Low (Low[shift] < Previous Low in Lookback)
-      // AO: Higher Low (AO[shift] > AO at Previous Low)
-      
-      // Search for the lowest low in the lookback window (excluding immediate neighbors to find "Swing")
-      int searchStart = shift + 3; // minimal separation
-      int searchEnd   = shift + AOWPR_Div_Lookback;
-      if(searchEnd >= count) searchEnd = count - 1;
-
-      int lowestIdx = -1;
-      double minLow = DBL_MAX;
-      
-      // Find the absolute lowest point in the window
-      for(int i=searchStart; i<searchEnd; i++)
-        {
-         if(low[i] < minLow)
-           {
-            minLow = low[i];
-            lowestIdx = i;
-           }
-        }
-        
-      if(lowestIdx != -1)
-        {
-         // 1. Price is forming a Lower Low (Current Low < Prev Low)
-         if(low[shift] < minLow)
-           {
-            // 2. AO is forming a Higher Low (Current AO > AO at Lowest Low)
-            if(ao[shift] > ao[lowestIdx])
-              {
-               return "Strategy Buy (Div+)";
-              }
-           }
-        }
+      double ao_val = ao[shift];
+      return StringFormat("Buy: Giá Low chạm BB Lower, WPR < %.1f, AO Xanh (%.5f > %.5f)", Ext_WPR_OS, ao[shift], ao[shift+1]);
      }
      
-   // ---------------- BEARISH SETUP ----------------
-   // Trigger: WPR Cross Down -20 (Exit Overbought)
-   // WPR[2] >= -20, WPR[1] < -20
-   bool wprCrossDown = (wpr[shift+1] >= AOWPR_WPR_OB && wpr[shift] < AOWPR_WPR_OB);
-   
-   // AO Confirmation: Red (Falling)
-   bool aoRed = (ao[shift] < ao[shift+1]);
-   
-   if(wprCrossDown && aoRed)
+   // 3. Sell Setup
+   bool sellCondition = (high[shift] >= bb_upper) && 
+                        (wpr[shift] > Ext_WPR_OB) && 
+                        (ao[shift] < ao[shift+1]); // AO < AO_prev (Red)
+                        
+   if(sellCondition)
      {
-      // Divergence Check (Bearish)
-      // Price: Higher High
-      // AO: Lower High
-      
-      int searchStart = shift + 3;
-      int searchEnd   = shift + AOWPR_Div_Lookback;
-      if(searchEnd >= count) searchEnd = count - 1;
-      
-      int highestIdx = -1;
-      double maxHigh = -DBL_MAX;
-      
-      for(int i=searchStart; i<searchEnd; i++)
-        {
-         if(high[i] > maxHigh)
-           {
-            maxHigh = high[i];
-            highestIdx = i;
-           }
-        }
-        
-      if(highestIdx != -1)
-        {
-         // 1. Price Higher High
-         if(high[shift] > maxHigh)
-           {
-            // 2. AO Lower High
-            if(ao[shift] < ao[highestIdx])
-              {
-               return "Strategy Sell (Div-)";
-              }
-           }
-        }
+      return StringFormat("Sell: Giá High chạm BB Upper, WPR > %.1f, AO Đỏ (%.5f < %.5f)", Ext_WPR_OB, ao[shift], ao[shift+1]);
      }
      
    return "";

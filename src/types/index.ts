@@ -152,29 +152,3 @@ export type Utility = {
     inDevelopment?: boolean;
     phoneNumber?: string;
 };
-
-export enum TransactionType {
-    MONTHLY_FEE = "MONTHLY_FEE", // Thu quỹ tháng (Member)
-    GUEST_FEE = "GUEST_FEE",     // Thu phí vãng lai (Guest)
-    EXPENSE = "EXPENSE",         // Chi tiêu (Cầu, nước...)
-    REVENUE = "REVENUE"          // Thu khác
-}
-
-export type Transaction = {
-    id: string;
-    amount: number;
-    type: TransactionType;
-    description?: string;
-    createdAt: number;
-    createdBy?: string;
-    
-    // Thông tin bổ sung
-    relatedUserID?: string;      // ID người đóng (Member hoặc Guest)
-    targetMonth?: string;        // "01-2026" (Dùng cho quỹ tháng)
-    targetDate?: string;         // "2026-01-12" (Dùng cho Guest)
-};
-
-export type FinanceReport = {
-    totalFund: number;           // Tổng quỹ hiện tại
-    paidMembers: string[];       // Danh sách ID member đã đóng quỹ tháng này
-};

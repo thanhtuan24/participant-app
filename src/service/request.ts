@@ -1,5 +1,5 @@
 import { UNAUTHORIZED } from "@constants";
-import { BASE_URL } from "@constants/common";
+import { BASE_URL, HTTP_FUNCTION_URL } from "@constants/common";
 import { ResData, ResHTTP } from "@dts";
 import { useStore as store } from "@store";
 import { getToken } from "./zalo";
@@ -96,3 +96,30 @@ export async function requestParticipant<T>(
         throw err;
     }
 }
+
+export const fetchRequest = async (
+    endpoint: string,
+    options: RequestInit = {}
+): Promise<any> => {
+    const headers = {
+        "Content-Type": "application/json",
+        ...options.headers,
+    };
+
+    const baseUrl = BASE_URL || HTTP_FUNCTION_URL;
+    // Ensure we use a valid base URL. If baseUrl is undefined, new URL() might throw or create an invalid URL depending on environment.
+    // Given HTTP_FUNCTION_URL is hardcoded in common.ts, this should be safe.
+    const url = new URL(endpoint, baseUrl);
+
+    const response = await fetch(url.toString(), {
+        ...options,
+        headers,
+    });
+
+    if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(errorBody || `HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+};

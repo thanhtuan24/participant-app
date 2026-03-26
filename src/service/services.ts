@@ -362,9 +362,8 @@ export const getUserParticipant = async (
 };
 
 // Hàm getAppConfig được viết lại theo phong cách bạn yêu cầu
-export const getAppConfig = async (): Promise<{ mainTitle: string }> => {
+export const getAppConfig = async (): Promise<{ mainTitle: string, enableRichFeatures?: boolean }> => {
     try {
-        // Tạo URL với query parameter `getConfig=true`
         const response = await fetch(`${HTTP_FUNCTION_URL}?getConfig=true`);
 
         if (!response.ok) {
@@ -376,8 +375,21 @@ export const getAppConfig = async (): Promise<{ mainTitle: string }> => {
 
     } catch (error) {
         console.error('Error fetching app config:', error);
-        // Trả về một giá trị mặc định để ứng dụng không bị lỗi
         return { mainTitle: 'Sân Cao Đẳng Thương Mại 05:00 -> 07:00' };
+    }
+};
+
+export const checkMemberAccess = async (userID: string): Promise<boolean> => {
+    try {
+        const response = await fetch(`${HTTP_FUNCTION_URL}?checkMember=true&userID=${encodeURIComponent(userID)}`);
+        if (!response.ok) {
+            throw new Error('Network response was not ok for checkMember');
+        }
+        const data = await response.json();
+        return !!data.isMember;
+    } catch (error) {
+        console.error('Error checking member access:', error);
+        return false;
     }
 };
 

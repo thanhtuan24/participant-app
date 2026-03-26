@@ -1,128 +1,119 @@
 import { PartiItem } from "@dts";
 import React from "react";
-import styled from "styled-components";
-import tw from "twin.macro";
-import { Icon, Box, Avatar } from "zmp-ui";
-
-const Container = styled.div`
-    ${tw`py-3 px-1 `}
-`;
-
-const HeaderContainer = styled.div`
-    ${tw`grid-cols-2 flex justify-between gap-1 mb-2 text-[12px] leading-5`}
-`;
-
-const TimeContainer = styled.div`
-    ${tw`block pl-4 gap-2 text-[#767A7F] text-lg h-fit`}
-`;
-const FeedbackType = styled.div`
-    ${tw`border-[#D7EDFF] border flex flex-col mr-4 text-right items-end w-fit text-sm px-1 py-0.5 font-medium justify-center text-[#046DD6] rounded-xl font-medium`}
-`;
-
-const AvatarType = styled.div`
-    ${tw`border-[#D7EDFF] gap-1 flex text-right items-center w-fit text-sm px-1 py-0.5 font-medium justify-end text-[#046DD6] rounded-xl font-medium`}
-`;
-
-
-const UsernameText = styled.div`
-    ${tw``}
-`;
-
-const BodyContainer = styled.div`
-    ${tw`text-[#141414]`}
-`;
-
-const SmallText = styled.div`
-  ${tw`block font-bold text-sm`}
-`;
-
-const Content = styled.div`
-    ${tw`block  [line-clamp: 3]`}
-`;
-
+import { Icon, Avatar } from "zmp-ui";
 
 export interface ParticipantItemProps {
     data: PartiItem;
     isPaid?: boolean;
 }
 
-// Helper function to format time to HH:MM:SS
-// Hàm định dạng timestamp
 const formatRegistrationTime = (timestamp: number) => {
     if (!timestamp) return '';
     const dateObject = new Date(timestamp.toString().length < 11 ? timestamp * 1000 : timestamp);
-
-
-    // Lấy từng thành phần
-    const month = dateObject.getMonth() + 1; // Lấy tháng (0-11), nên phải +1
-    const day = dateObject.getDate(); // Lấy ngày, vd: 1
-
-    const hours = dateObject.getHours(); // Lấy giờ, vd: 17
-    const minutes = dateObject.getMinutes(); // Lấy phút, vd: 31
-
-    // Thêm số 0 đằng trước cho các số có 1 chữ số (ví dụ: 7 -> "07")
+    const month = dateObject.getMonth() + 1;
+    const day = dateObject.getDate();
+    const hours = dateObject.getHours();
+    const minutes = dateObject.getMinutes();
     const paddedMonth = String(month).padStart(2, '0');
     const paddedDay = String(day).padStart(2, '0');
     const paddedHours = String(hours).padStart(2, '0');
     const paddedMinutes = String(minutes).padStart(2, '0');
-
-
-    // Ghép thành chuỗi theo ý muốn
-    const customFormattedString = `${paddedHours}:${paddedMinutes}-${paddedDay}/${paddedMonth}`;
-
-    // Kết quả sẽ là: "Ngày 01/07/2025 lúc 17:31
-    return customFormattedString;
+    return `${paddedHours}:${paddedMinutes} - ${paddedDay}/${paddedMonth}`;
 };
 
-const ParticipantItem: React.FC<ParticipantItemProps> = ({ data, isPaid }) => {
+const getStatusConfig = (status: string) => {
+    if (status === "yes") return {
+        label: "Đã đăng ký",
+        bg: "bg-[#E8F8F5]",
+        text: "text-[#0EA5A0]",
+        border: "border-[#B2E8E0]",
+    };
+    if (status === "no") return {
+        label: "Không tham gia",
+        bg: "bg-[#FFF3E0]",
+        text: "text-[#E67E22]",
+        border: "border-[#FDDCB0]",
+    };
+    return {
+        label: "Không đăng ký",
+        bg: "bg-[#F4F5F6]",
+        text: "text-[#767A7F]",
+        border: "border-[#E9EBED]",
+    };
+};
+
+const getAttendanceColor = (count: number) => {
+    if (count > 7) return "#22C55E";
+    if (count > 3) return "#EAB308";
+    return "#EF4444";
+};
+
+const PresentItem: React.FC<ParticipantItemProps> = ({ data, isPaid }) => {
     const formattedTime = data.timestamp ? formatRegistrationTime(data.timestamp) : '';
+    const statusCfg = getStatusConfig(data.status || '');
 
     return (
-        <Container>
-            <HeaderContainer>
-                <TimeContainer>
-                    <UsernameText>{(data.username)}</UsernameText>
-                    {/* <Icon size={15} icon="zi-clock-1" /> */}
-                    <div className="flex items-center gap-2">
-                         <SmallText style={{ color: data.isMember ? "#4AB5AA" : "orange" }}>{data.isMember ? "Thành viên" : "Vãng lai"}</SmallText>
-                         {isPaid && (
-                            <div className="flex items-center gap-1 text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full border border-green-200">
-                                <Icon icon="zi-check-circle-solid" size={12} />
-                                <span className="text-[9px] font-bold">ĐÃ ĐÓNG QUỸ</span>
-                            </div>
-                         )}
-                    </div>
-                    
-                    {data.isMember ?
-                        (<SmallText style={{ color: data.numberRegistered > 7 ? "#00FF77" : data.numberRegistered > 3 ? "#F3DA74" : "red" }}>Số ngày đã đi:{data.numberRegistered}</SmallText>)
-                        : (
-                            ""
-                        )}
-                </TimeContainer>
-                <AvatarType>
-                    <Avatar src={data.avatar}>
+        <div className="flex items-start gap-3 py-3 px-2">
+            {/* Avatar */}
+            <div className="flex-shrink-0 pt-0.5">
+                <Avatar size={40} src={data.avatar}>
+                    {data.username}
+                </Avatar>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+                {/* Row 1: Username + status badge */}
+                <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="font-semibold text-[#141415] text-[15px] truncate">
                         {data.username}
-                    </Avatar>
+                    </span>
+                    <span className={`flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full border ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}>
+                        {statusCfg.label}
+                    </span>
+                </div>
 
-                    <FeedbackType
-                        style={{
-                            backgroundColor: data.status === "yes" ? "rgba(18, 174, 226, 0.1)" : (data.status === "no" ? "orange" : "grey"),
-                            color: data.status === "yes" ? "#12AEE2" : "white"
-                        }}
-                    ><div style={{
-                        display: 'flex',
-                        flexDirection: 'column', // Xếp các phần tử theo chiều dọc
-                        alignItems: 'center'      // Căn giữa theo chiều ngang
-                    }}>
-                            <span>{data.status === "yes" ? "Đã đăng ký" : (data.status === "no" ? "Không tham gia" : "Không đăng ký")}</span>
-                            {data.status === "yes" && formattedTime && <span style={{ fontSize: '0.8em', marginTop: '2px' }}>{formattedTime}</span>}
+                {/* Row 2: Member type + paid badge */}
+                <div className="flex items-center gap-2 mb-0.5">
+                    <span
+                        className="text-xs font-semibold"
+                        style={{ color: data.isMember ? "#4AB5AA" : "#E67E22" }}
+                    >
+                        {data.isMember ? "Thành viên" : "Vãng lai"}
+                    </span>
+                    {isPaid && (
+                        <span className="inline-flex items-center gap-0.5 text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full border border-green-200">
+                            <Icon icon="zi-check-circle-solid" size={10} />
+                            <span className="text-[9px] font-bold leading-none">ĐÃ ĐÓNG QUỸ</span>
+                        </span>
+                    )}
+                </div>
 
-                        </div>
-                    </FeedbackType>
-                </AvatarType>
-            </HeaderContainer>
-        </Container>
+                {/* Row 3: Attendance count + registration time */}
+                <div className="flex items-center justify-between text-xs text-[#767A7F]">
+                    <div className="flex items-center gap-3">
+                        {data.isMember && (
+                            <span className="flex items-center gap-1">
+                                <span>Số buổi:</span>
+                                <span
+                                    className="font-bold"
+                                    style={{ color: getAttendanceColor(data.numberRegistered) }}
+                                >
+                                    {data.numberRegistered}
+                                </span>
+                            </span>
+                        )}
+                    </div>
+                    {data.status === "yes" && formattedTime && (
+                        <span className="flex items-center gap-1 text-[#767A7F]">
+                            <Icon size={12} icon="zi-clock-1" />
+                            <span>{formattedTime}</span>
+                        </span>
+                    )}
+                </div>
+            </div>
+        </div>
     );
 };
 
-export default ParticipantItem;
+export default PresentItem;

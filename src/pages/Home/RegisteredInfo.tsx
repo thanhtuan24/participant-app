@@ -1,5 +1,4 @@
 import React, { FunctionComponent } from "react";
-import { Box, Text } from "zmp-ui";
 import Background from "@assets/background.png";
 import { useStore } from "@store";
 import { AvatarSkeleton, TextItemSkeleton } from "@components/skeleton";
@@ -12,52 +11,57 @@ interface RegisteredInfoProps {
 }
 
 const RegisteredInfo: FunctionComponent<RegisteredInfoProps> = (props) => {
-    // Lấy user và mainTitle từ store theo cách dễ đọc hơn
     const { mainTitle } = useStore(state => ({
         mainTitle: state.mainTitle
     }));
     const { data, loading = true } = props;
 
     const renderSkeleton = () => (
-        <>
-            <Box mb={1}>
-                <AvatarSkeleton size={48} />
-            </Box>
+        <div className="flex flex-col items-center gap-3">
+            <AvatarSkeleton size={48} />
             <TextItemSkeleton height={22} width={120} />
-            <div
-                 className="bg-white border-[#D7EDFF] border w-fit px-2 py-0.5 text-[#046DD6] rounded-xl font-medium h-fit"
-            >
+            <div className="bg-white/20 backdrop-blur-sm px-4 py-1.5 text-white/80 rounded-full text-sm font-medium">
                 Đang cập nhật dữ liệu
             </div>
-        </>
+        </div>
     );
 
     return (
         <div
-            className="flex flex-col items-center py-6 bg-center bg-no-repeat bg-cover"
+            className="relative bg-center bg-no-repeat bg-cover"
             style={{ backgroundImage: `url("${Background}")` }}
         >
-            {!loading && (
-                <>
-                    <Box mb={1}>
-                        <Text color="white" bold size="xLarge" className="tracking-wide text-center">
+            {/* Overlay gradient */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#046DD6]/60 to-[#046DD6]/30" />
+
+            <div className="relative flex flex-col items-center px-4 py-6">
+                {!loading ? (
+                    <>
+                        {/* Title */}
+                        <h2 className="text-white font-bold text-lg tracking-wide text-center mb-3 drop-shadow-sm">
                             {mainTitle}
-                        </Text>
-                    </Box>
+                        </h2>
 
-                    {/* Phần hiển thị ngày và số lượng tham gia */}
-                    <div className="flex flex-col items-center gap-1">
-                        <Text className="font-medium text-[#ffff33] text-xl font-bold">
-                            Ngày {formatDate(new Date(participantDate()), 'dd/mm/yyyy')}
-                        </Text>
-
-                        <Text className="text-center text-[#ffff33] text-xl font-bold">
-                            Tham gia: {data}
-                        </Text>
-                    </div>
-                </>
-            )}
-            {loading && renderSkeleton()}
+                        {/* Info badges row */}
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1.5">
+                                <span className="text-[#FFE566] text-sm">📅</span>
+                                <span className="text-white font-semibold text-sm">
+                                    Ngày {formatDate(new Date(participantDate()), 'dd/mm/yyyy')}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1.5">
+                                <span className="text-[#FFE566] text-sm">👥</span>
+                                <span className="text-white font-semibold text-sm">
+                                    Tham gia: {data}
+                                </span>
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    renderSkeleton()
+                )}
+            </div>
         </div>
     );
 };

@@ -17,12 +17,7 @@ exports.api = onRequest({region: "asia-southeast1", cors: true}, async (req, res
   try {
     switch (method) {
       case "post":
-        // Phân loại action dựa trên body
-        if (req.body.action === "FINANCE") {
-          await handleFinance(req, res);
-        } else {
-          await handlePost(req, res);
-        }
+        await handlePost(req, res);
         break;
       case "get":
         await handleGet(req, res);
@@ -38,74 +33,6 @@ exports.api = onRequest({region: "asia-southeast1", cors: true}, async (req, res
     res.status(500).send(`Error: ${error.message}`);
   }
 });
-
-async function handleFinance(req, res) {
-  const { 
-    subAction, // "ADD_TRANSACTION" | "GET_SUMMARY"
-    amount, 
-    type, 
-    description, 
-    relatedUserID, 
-    targetMonth, 
-    targetDate 
-  } = req.body;
-
-  if (subAction === "GET_SUMMARY") {
-    // Lấy tổng quan tài chính (số dư quỹ, danh sách đã đóng tháng này)
-    const summary = {
-      totalFund: 0,
-      paidMembers: []
-    };
-
-    // 1. Tính tổng quỹ từ transactions
-    // Lưu ý: Đây là cách tính đơn giản, thực tế nên cache con số này lại
-    const transRef = db.ref("/finances/transactions");
-    const snapshot = await transRef.once("value");
-    
-    snapshot.forEach(child => {
-      const t = child.val();
-      if (t.type === "EXPENSE") {
-        summary.totalFund -= (t.amount || 0);
-      } else {
-        summary.totalFund += (t.amount || 0);
-      }
-    });
-
-    // 2. Lấy danh sách đóng tiền tháng này (nếu có targetMonth)
-    if (targetMonth) {
-       const monthRef = db.ref(`/finances/monthly_status/${targetMonth}`);
-       const monthSnapshot = await monthRef.once("value");
-       if (monthSnapshot.exists()) {
-          summary.paidMembers = Object.keys(monthSnapshot.val());
-       }
-    }
-
-    res.status(200).json(summary);
-    return;
-  }
-
-  // Mặc định là ADD_TRANSACTION
-  const newTransRef = db.ref("/finances/transactions").push();
-  const transaction = {
-    amount: Number(amount),
-    type,
-    description: description || "",
-    relatedUserID: relatedUserID || null,
-    targetMonth: targetMonth || null,
-    targetDate: targetDate || null,
-    createdAt: admin.database.ServerValue.TIMESTAMP
-  };
-
-  await newTransRef.set(transaction);
-
-  // Nếu là đóng quỹ tháng -> Cập nhật index để lookup nhanh
-  if (type === "MONTHLY_FEE" && relatedUserID && targetMonth) {
-    const statusRef = db.ref(`/finances/monthly_status/${targetMonth}/${relatedUserID}`);
-    await statusRef.set(true);
-  }
-
-  res.status(200).json({ id: newTransRef.key, ...transaction });
-}
 
 // Thay thế hoàn toàn hàm handlePost cũ bằng hàm này
 async function handlePost(req, res) {
@@ -189,14 +116,25 @@ async function handlePost(req, res) {
 // File backend (ví dụ: index.js của Firebase Functions)
 
 async function handleGet(req, res) {
-  const {userID, participantDate, type, getConfig} = req.query; // Thêm getConfig
+  const {userID, participantDate, type, getConfig, checkMember} = req.query;
 
-  // === THÊM MỚI TẠI ĐÂY ===
-  // Endpoint để lấy cấu hình chung
+  // === Endpoint kiểm tra quyền truy cập thành viên ===
+  if (checkMember === "true" && userID) {
+    const vipRef = db.ref(`/vip_members/${userID}`);
+    const vipSnapshot = await vipRef.once("value");
+    const isMember = vipSnapshot.exists();
+    res.status(200).json({ isMember });
+    return;
+  }
+
+  // === Endpoint để lấy cấu hình chung ===
   if (getConfig === "true") {
     const configRef = db.ref("/config");
     const snapshot = await configRef.once("value");
-    const configData = snapshot.val() || {mainTitle: "Lịch tham gia"}; // Giá trị mặc định
+    const configData = snapshot.val() || {
+      mainTitle: "Lịch tham gia",
+      enableRichFeatures: false
+    }; 
     res.status(200).json(configData);
     return; // Kết thúc hàm tại đây
   }
