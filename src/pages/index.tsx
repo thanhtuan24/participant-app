@@ -26,6 +26,7 @@ import {
     CreateChallengePage,
     ChallengeDetailPage,
 } from "./Challenge";
+import { AdminPage } from "./Admin";
 
 const Routes: React.FC = () => (
     <ZMPRouter>
@@ -62,6 +63,9 @@ const Routes: React.FC = () => (
             <Route path="/challenges" element={<ChallengeListPage />} />
             <Route path="/challenges/create" element={<CreateChallengePage />} />
             <Route path="/challenges/:id" element={<ChallengeDetailPage />} />
+
+            {/* Admin route */}
+            <Route path="/admin" element={<AdminPage />} />
         </AnimationRoutes>
     </ZMPRouter>
 );

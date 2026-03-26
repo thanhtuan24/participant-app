@@ -15,3 +15,4 @@ export { default as NotificationIcon } from "./Notification";
 export { default as SuccessIcon } from "./SuccessIcon";
 export { default as TrophyIcon } from "./Trophy";
 export { default as SwordsIcon } from "./Swords";
+export { default as SettingsIcon } from "./Settings";

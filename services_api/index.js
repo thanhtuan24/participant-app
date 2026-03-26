@@ -13,6 +13,200 @@ const {handleChallenge, isChallengeAction} = require("./challenge");
 // Danh sách member cứng đã được chuyển sang Database tại node "/vip_members"
 // Để thêm member, hãy thêm record vào Firebase: vip_members/{userID}: true
 
+// ============================================================
+// ADMIN ACTIONS
+// ============================================================
+const ADMIN_ACTIONS = ["getAdminConfig", "updateConfig", "setAdmin", "getMembers", "addMember", "removeMember"];
+
+function isAdminAction(action) {
+  return ADMIN_ACTIONS.includes(action);
+}
+
+async function isUserAdmin(userID) {
+  const configSnap = await db.ref("/config/adminId").once("value");
+  const adminId = configSnap.val();
+  if (!adminId) return {isAdmin: false, noAdmin: true};
+  return {isAdmin: adminId === userID, noAdmin: false};
+}
+
+async function handleAdmin(req, res) {
+  const action = req.query.action || req.body?.action;
+
+  switch (action) {
+    case "getAdminConfig":
+      await getAdminConfig(req, res);
+      break;
+    case "updateConfig":
+      await updateConfigAction(req, res);
+      break;
+    case "setAdmin":
+      await setAdminAction(req, res);
+      break;
+    case "getMembers":
+      await getMembersAction(req, res);
+      break;
+    case "addMember":
+      await addMemberAction(req, res);
+      break;
+    case "removeMember":
+      await removeMemberAction(req, res);
+      break;
+    default:
+      res.status(400).json({error: `Unknown admin action: ${action}`});
+  }
+}
+
+// Get full config + admin info
+async function getAdminConfig(req, res) {
+  const {userID} = req.query;
+  if (!userID) {
+    res.status(400).json({error: "Missing userID"});
+    return;
+  }
+
+  const configSnap = await db.ref("/config").once("value");
+  const config = configSnap.val() || {};
+  const adminId = config.adminId || null;
+  const isAdmin = adminId === userID;
+  const noAdmin = !adminId;
+
+  res.json({
+    config: {
+      mainTitle: config.mainTitle || "Sân Cầu Lông G7",
+      enableRichFeatures: !!config.enableRichFeatures,
+      adminId,
+    },
+    isAdmin,
+    noAdmin,
+  });
+}
+
+// Update config values (admin only / or first-time claim)
+async function updateConfigAction(req, res) {
+  const {userID, mainTitle, enableRichFeatures} = req.body;
+  if (!userID) {
+    res.status(400).json({error: "Missing userID"});
+    return;
+  }
+
+  const {isAdmin, noAdmin} = await isUserAdmin(userID);
+  if (!isAdmin && !noAdmin) {
+    res.status(403).json({error: "Chỉ admin mới có quyền thay đổi cấu hình"});
+    return;
+  }
+
+  const updates = {};
+  if (mainTitle !== undefined) updates.mainTitle = mainTitle;
+  if (enableRichFeatures !== undefined) updates.enableRichFeatures = !!enableRichFeatures;
+  updates.updatedAt = admin.database.ServerValue.TIMESTAMP;
+
+  // If no admin, auto-set this user as admin
+  if (noAdmin) {
+    updates.adminId = userID;
+  }
+
+  await db.ref("/config").update(updates);
+  const updated = (await db.ref("/config").once("value")).val();
+  res.json({config: updated, isAdmin: true});
+}
+
+// Set admin (current admin or first claim)
+async function setAdminAction(req, res) {
+  const {userID, newAdminId} = req.body;
+  if (!userID || !newAdminId) {
+    res.status(400).json({error: "Missing userID or newAdminId"});
+    return;
+  }
+
+  const {isAdmin, noAdmin} = await isUserAdmin(userID);
+  // Allow: current admin transfers, or no admin exists and user claims
+  if (!isAdmin && !noAdmin) {
+    res.status(403).json({error: "Chỉ admin hiện tại mới có quyền chỉ định admin mới"});
+    return;
+  }
+
+  await db.ref("/config/adminId").set(newAdminId);
+  res.json({success: true, adminId: newAdminId});
+}
+
+// Get all members (from /vip_members + /users)
+async function getMembersAction(req, res) {
+  const {userID} = req.query;
+  if (!userID) {
+    res.status(400).json({error: "Missing userID"});
+    return;
+  }
+
+  const {isAdmin, noAdmin} = await isUserAdmin(userID);
+  if (!isAdmin && !noAdmin) {
+    res.status(403).json({error: "Chỉ admin mới xem được danh sách thành viên"});
+    return;
+  }
+
+  const [vipSnap, usersSnap] = await Promise.all([
+    db.ref("/vip_members").once("value"),
+    db.ref("/users").once("value"),
+  ]);
+
+  const vipMembers = vipSnap.val() || {};
+  const users = usersSnap.val() || {};
+
+  // Build member list: all users with their VIP status
+  const members = [];
+  for (const [uid, userData] of Object.entries(users)) {
+    members.push({
+      userID: uid,
+      username: userData.username || "",
+      avatar: userData.avatar || "",
+      isMember: !!vipMembers[uid],
+    });
+  }
+
+  // Sort: members first, then by name
+  members.sort((a, b) => {
+    if (a.isMember !== b.isMember) return a.isMember ? -1 : 1;
+    return (a.username || "").localeCompare(b.username || "");
+  });
+
+  res.json({members});
+}
+
+// Add a member to VIP
+async function addMemberAction(req, res) {
+  const {userID, targetUserID} = req.body;
+  if (!userID || !targetUserID) {
+    res.status(400).json({error: "Missing userID or targetUserID"});
+    return;
+  }
+
+  const {isAdmin, noAdmin} = await isUserAdmin(userID);
+  if (!isAdmin && !noAdmin) {
+    res.status(403).json({error: "Chỉ admin mới có quyền thêm thành viên"});
+    return;
+  }
+
+  await db.ref(`/vip_members/${targetUserID}`).set(true);
+  res.json({success: true});
+}
+
+// Remove a member from VIP
+async function removeMemberAction(req, res) {
+  const {userID, targetUserID} = req.body;
+  if (!userID || !targetUserID) {
+    res.status(400).json({error: "Missing userID or targetUserID"});
+    return;
+  }
+
+  const {isAdmin, noAdmin} = await isUserAdmin(userID);
+  if (!isAdmin && !noAdmin) {
+    res.status(403).json({error: "Chỉ admin mới có quyền xóa thành viên"});
+    return;
+  }
+
+  await db.ref(`/vip_members/${targetUserID}`).remove();
+  res.json({success: true});
+}
+
 exports.api = onRequest({region: "asia-southeast1", cors: true}, async (req, res) => {
   const method = req.method.toLowerCase();
 
@@ -21,6 +215,10 @@ exports.api = onRequest({region: "asia-southeast1", cors: true}, async (req, res
     const action = req.query.action || req.body?.action;
     if (action && isChallengeAction(action)) {
       await handleChallenge(req, res);
+      return;
+    }
+    if (action && isAdminAction(action)) {
+      await handleAdmin(req, res);
       return;
     }
     if (action) {

@@ -13,6 +13,7 @@ import createScheduleSlide, { ScheduleSlice } from "./scheduleSlice";
 import createProfileSlice, { ProfileSlice } from "./profileSlice";
 import createTournamentSlice, { TournamentSlice } from "./tournamentSlice";
 import createChallengeSlice, { ChallengeSlice } from "./challengeSlice";
+import createAdminSlice, { AdminSlice } from "./adminSlice";
 
 type State = AppSlice &
     AuthSlice &
@@ -22,7 +23,8 @@ type State = AppSlice &
     ScheduleSlice &
     ProfileSlice &
     TournamentSlice &
-    ChallengeSlice;
+    ChallengeSlice &
+    AdminSlice;
 
 export const useStore = create<State>()(
     devtools((...a) => ({
@@ -35,5 +37,6 @@ export const useStore = create<State>()(
         ...createProfileSlice(...a),
         ...createTournamentSlice(...a),
         ...createChallengeSlice(...a),
+        ...createAdminSlice(...a),
     })),
 );
