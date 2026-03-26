@@ -14,6 +14,18 @@ import { CreateScheduleAppointmentPage } from "./CreateScheduleAppointment";
 import { AppointmentScheduleResultPage } from "./AppointmentScheduleResult";
 import { SearchPage } from "./Search";
 import { ProfilePage } from "./Profile";
+import {
+    TournamentListPage,
+    CreateTournamentPage,
+    TournamentDetailPage,
+    AddPlayersPage,
+    MatchScorePage,
+} from "./Tournament";
+import {
+    ChallengeListPage,
+    CreateChallengePage,
+    ChallengeDetailPage,
+} from "./Challenge";
 
 const Routes: React.FC = () => (
     <ZMPRouter>
@@ -38,6 +50,18 @@ const Routes: React.FC = () => (
             />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+
+            {/* Tournament routes */}
+            <Route path="/tournaments" element={<TournamentListPage />} />
+            <Route path="/tournaments/create" element={<CreateTournamentPage />} />
+            <Route path="/tournaments/:id" element={<TournamentDetailPage />} />
+            <Route path="/tournaments/:id/add-players" element={<AddPlayersPage />} />
+            <Route path="/tournaments/:id/match/:matchId" element={<MatchScorePage />} />
+
+            {/* Challenge routes */}
+            <Route path="/challenges" element={<ChallengeListPage />} />
+            <Route path="/challenges/create" element={<CreateChallengePage />} />
+            <Route path="/challenges/:id" element={<ChallengeDetailPage />} />
         </AnimationRoutes>
     </ZMPRouter>
 );

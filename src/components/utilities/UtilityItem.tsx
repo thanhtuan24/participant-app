@@ -37,15 +37,15 @@ const UtilityItem: FunctionComponent<UtilityItemProps> = props => {
 
     return (
         <div
-            className="flex flex-col items-center rounded-xl bg-[#F5F9FC] py-4 px-2 active:bg-[#E8F0F8] transition-colors cursor-pointer shadow-sm"
+            className="flex flex-col items-center rounded-lg bg-[#F5F9FC] py-2.5 px-1 active:bg-[#E8F0F8] transition-colors cursor-pointer"
             onClick={handleClick}
         >
             {Icon && (
-                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm mb-2">
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm mb-1">
                     <Icon />
                 </div>
             )}
-            <span className="text-sm font-semibold text-center text-[#141415] leading-tight">
+            <span className="text-[10px] font-semibold text-center text-[#141415] leading-tight">
                 {label}
             </span>
         </div>

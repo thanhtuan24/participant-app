@@ -7,6 +7,8 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 
 const db = admin.database();
+const {handleTournament} = require("./tournament");
+const {handleChallenge, isChallengeAction} = require("./challenge");
 
 // Danh sách member cứng đã được chuyển sang Database tại node "/vip_members"
 // Để thêm member, hãy thêm record vào Firebase: vip_members/{userID}: true
@@ -15,6 +17,17 @@ exports.api = onRequest({region: "asia-southeast1", cors: true}, async (req, res
   const method = req.method.toLowerCase();
 
   try {
+    // Route tournament actions to tournament module
+    const action = req.query.action || req.body?.action;
+    if (action && isChallengeAction(action)) {
+      await handleChallenge(req, res);
+      return;
+    }
+    if (action) {
+      await handleTournament(req, res);
+      return;
+    }
+
     switch (method) {
       case "post":
         await handlePost(req, res);

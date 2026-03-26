@@ -13,3 +13,5 @@ export { default as SearchIcon } from "./Search";
 export { default as ImageIcon } from "./ImageIcon";
 export { default as NotificationIcon } from "./Notification";
 export { default as SuccessIcon } from "./SuccessIcon";
+export { default as TrophyIcon } from "./Trophy";
+export { default as SwordsIcon } from "./Swords";

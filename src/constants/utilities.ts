@@ -39,6 +39,18 @@ export const APP_UTILITIES: Array<Utility> = [
         icon: Icon.CalendarIcon,
         path: "/create-schedule-appointment",
     },
+    {
+        key: "tournament",
+        label: "Giải đấu",
+        icon: Icon.TrophyIcon,
+        path: "/tournaments",
+    },
+    {
+        key: "challenge",
+        label: "Tạo kèo",
+        icon: Icon.SwordsIcon,
+        path: "/challenges",
+    },
     // {
     //     key: "goverment",
     //     label: "Cổng dịch vụ công quốc gia",

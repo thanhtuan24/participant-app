@@ -88,13 +88,16 @@ export async function requestParticipant<T>(
     }
 
     const response = await fetch(requestUrl.toString(), requestOptions);
+    let resData: any;
     try {
-        const resData = (await response.json()) as ResData<T>;
-        return resData as unknown as T;
-    } catch (error) {
-        const err = new Error(error instanceof Error ? error.message : String(error));
-        throw err;
+        resData = await response.json();
+    } catch {
+        throw new Error(`HTTP ${response.status}: Invalid response`);
     }
+    if (!response.ok) {
+        throw new Error(resData?.error || resData?.message || `HTTP ${response.status}`);
+    }
+    return resData as unknown as T;
 }
 
 export const fetchRequest = async (

@@ -8,7 +8,7 @@ interface UtilitiesProps {
 const Utilities: FunctionComponent<UtilitiesProps> = props => {
     const { utilities } = props;
     return (
-        <div className="grid grid-cols-2 gap-3 px-4 py-3 bg-white">
+        <div className="grid grid-cols-4 gap-2 px-4 py-2 bg-white">
             {utilities.map(item => {
                 const { key, ...utility } = item;
                 return <UtilityItem key={key} {...utility} />;

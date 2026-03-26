@@ -16,6 +16,7 @@ export default () => {
         ],
         build: {
             target: "es2020",
+            outDir: path.resolve(__dirname, "www"),
         },
         resolve: {
             alias: {
