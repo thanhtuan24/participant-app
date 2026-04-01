@@ -11,7 +11,7 @@ const db = admin.database();
 const CHALLENGE_ACTIONS = [
   "createChallenge", "getChallenges", "getChallenge",
   "acceptChallenge", "joinChallenge",
-  "updateChallengeScore", "completeChallenge",
+  "updateChallengeScore", "completeChallenge", "updateChallenge",
 ];
 
 function isChallengeAction(action) {
@@ -42,6 +42,9 @@ async function handleChallenge(req, res) {
       break;
     case "completeChallenge":
       await completeChallenge(req, res);
+      break;
+    case "updateChallenge":
+      await updateChallenge(req, res);
       break;
     default:
       res.status(400).json({error: `Unknown challenge action: ${action}`});
@@ -395,6 +398,67 @@ async function completeChallenge(req, res) {
     updatedAt: admin.database.ServerValue.TIMESTAMP,
   });
 
+  const updated = (await ref.once("value")).val();
+  res.json(updated);
+}
+
+// ============================================================
+// UPDATE CHALLENGE INFO + SCORES (edit mode)
+// ============================================================
+async function updateChallenge(req, res) {
+  const {challengeId, userID, name, betStake, scheduledAt, scores} = req.body;
+
+  if (!challengeId || !userID) {
+    res.status(400).json({error: "Missing challengeId or userID"});
+    return;
+  }
+
+  const ref = db.ref(`/challenges/${challengeId}`);
+  const snapshot = await ref.once("value");
+  if (!snapshot.exists()) {
+    res.status(404).json({error: "Challenge not found"});
+    return;
+  }
+
+  const challenge = snapshot.val();
+  if (challenge.status === "completed") {
+    res.status(400).json({error: "Cannot edit a completed challenge"});
+    return;
+  }
+
+  const isCreator = challenge.createdBy === userID;
+  const isParticipant =
+    challenge.team1?.players?.some((p) => p.userID === userID) ||
+    challenge.team2?.players?.some((p) => p.userID === userID);
+
+  if (!isCreator && !isParticipant) {
+    res.status(403).json({error: "Only creator or participants can update"});
+    return;
+  }
+
+  const updates = {updatedAt: admin.database.ServerValue.TIMESTAMP};
+
+  // Only creator can update metadata
+  if (isCreator) {
+    if (name !== undefined) updates.name = name;
+    if (betStake !== undefined) updates.betStake = betStake;
+    if (scheduledAt !== undefined) updates.scheduledAt = scheduledAt ? Number(scheduledAt) : null;
+  }
+
+  // Any participant can update scores
+  if (scores !== undefined) {
+    const sorted = [...scores].sort((a, b) => a.set - b.set).map((s) => ({
+      set: Number(s.set),
+      score1: Number(s.score1),
+      score2: Number(s.score2),
+      updatedBy: userID,
+      updatedAt: Date.now(),
+    }));
+    updates.scores = sorted;
+    if (sorted.length > 0) updates.status = "in_progress";
+  }
+
+  await ref.update(updates);
   const updated = (await ref.once("value")).val();
   res.json(updated);
 }

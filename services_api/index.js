@@ -338,7 +338,25 @@ async function handleGet(req, res) {
     return;
   }
 
-  // === Endpoint để lấy cấu hình chung ===
+  // === Endpoint get user profile by ID ===
+  const { getUser } = req.query;
+  if (getUser === "true" && userID) {
+    const userSnap = await db.ref(`/users/${userID}`).once("value");
+    if (!userSnap.exists()) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+    const userData = userSnap.val();
+    res.status(200).json({
+      userID,
+      username: userData.username || "",
+      avatar: userData.avatar || "",
+      isMember: !!userData.isMember,
+    });
+    return;
+  }
+
+  // === Endpoint de lay cau hinh chung ===
   if (getConfig === "true") {
     const configRef = db.ref("/config");
     const snapshot = await configRef.once("value");
@@ -369,20 +387,26 @@ async function handleGet(req, res) {
       const users = usersSnapshot.val() || {};
 
       // Tính start/end date của tháng hiện tại (Vietnam Time UTC+7)
+      // endOfPeriod mở rộng sang 7 ngày đầu tháng sau để bắt các đăng ký
+      // được tạo sau 6h (participantDate = ngày mai) vào cuối tháng.
       const now = new Date();
       const vnTime = new Date(now.getTime() + (7 * 60 * 60 * 1000));
       const year = vnTime.getUTCFullYear();
       const month = vnTime.getUTCMonth() + 1;
       const monthStr = month < 10 ? `0${month}` : `${month}`;
-      
+
+      const nextMonth = month === 12 ? 1 : month + 1;
+      const nextMonthYear = month === 12 ? year + 1 : year;
+      const nextMonthStr = nextMonth < 10 ? `0${nextMonth}` : `${nextMonth}`;
+
       const startOfMonth = `${year}-${monthStr}-01`;
-      const endOfMonth = `${year}-${monthStr}-31`;
+      const endOfPeriod = `${nextMonthYear}-${nextMonthStr}-07`;
 
       // Query range theo participantDate
       const query = db.ref("/participants")
         .orderByChild("participantDate")
         .startAt(startOfMonth)
-        .endAt(endOfMonth);
+        .endAt(endOfPeriod);
       
       const participantsSnapshot = await query.once("value");
       const items = [];

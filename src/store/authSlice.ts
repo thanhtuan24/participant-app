@@ -1,5 +1,6 @@
 import { User } from "@dts";
 import { getToken, getZaloUserInfo } from "@service/zalo";
+import { getUserFromDB } from "@service/services";
 import { StateCreator } from "zustand";
 
 export interface AuthSlice {
@@ -33,13 +34,21 @@ const authSlice: StateCreator<AuthSlice, [], [], AuthSlice> = (set, get) => ({
         set(state => ({ ...state, loading }));
     },
     getUserInfo: async () => {
+        if (get().loadingUserInfo) return;
         try {
             set(state => ({ ...state, loadingUserInfo: true }));
-            const user = await getZaloUserInfo();
-
+            let user = await getZaloUserInfo();
+            console.log("[Auth] Zalo userInfo:", JSON.stringify(user));
+            if (!user.name && user.id) {
+                const dbUser = await getUserFromDB(user.id);
+                if (dbUser?.username) {
+                    user = { ...user, name: dbUser.username, avatar: dbUser.avatar || user.avatar };
+                    console.log("[Auth] Fallback từ DB:", user.name);
+                }
+            }
             set(state => ({ ...state, user }));
         } catch (err) {
-            console.log("ERR: ", err);
+            console.log("[Auth] getUserInfo ERR:", err);
         } finally {
             set(state => ({ ...state, loadingUserInfo: false }));
         }

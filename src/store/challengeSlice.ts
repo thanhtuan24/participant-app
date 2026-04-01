@@ -7,6 +7,7 @@ import {
     joinChallenge as apiJoin,
     updateChallengeScore as apiUpdateScore,
     completeChallenge as apiComplete,
+    updateChallenge as apiUpdate,
 } from "@service/challengeService";
 import { StateCreator } from "zustand";
 
@@ -50,6 +51,16 @@ export interface ChallengeSlice {
         userID: string,
     ) => Promise<void>;
     completeChallengeAction: (challengeId: string, userID: string) => Promise<void>;
+    updateChallengeAction: (
+        challengeId: string,
+        userID: string,
+        data: {
+            name?: string;
+            betStake?: string;
+            scheduledAt?: number | null;
+            scores?: { set: number; score1: number; score2: number }[];
+        },
+    ) => Promise<void>;
     clearChallengeError: () => void;
 }
 
@@ -126,6 +137,16 @@ const challengeSlice: StateCreator<ChallengeSlice> = (set, get) => ({
     completeChallengeAction: async (challengeId, userID) => {
         try {
             await apiComplete(challengeId, userID);
+            await get().fetchChallengeDetail(challengeId);
+        } catch (error: any) {
+            set({ challengeError: error.message });
+            throw error;
+        }
+    },
+
+    updateChallengeAction: async (challengeId, userID, data) => {
+        try {
+            await apiUpdate(challengeId, userID, data);
             await get().fetchChallengeDetail(challengeId);
         } catch (error: any) {
             set({ challengeError: error.message });

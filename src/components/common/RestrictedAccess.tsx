@@ -23,10 +23,16 @@ const RestrictedAccess: React.FC = () => {
             </p>
 
             {/* Hint */}
-            <div className="bg-[#F4F5F6] rounded-xl px-5 py-3 max-w-[300px]">
+            <div className="bg-[#F4F5F6] rounded-xl px-5 py-3 max-w-[300px] space-y-2">
                 <p className="text-sm text-[#767A7F]">
                     Vui lòng liên hệ quản trị viên nếu bạn là thành viên để được cấp quyền truy cập.
                 </p>
+                <a
+                    href="tel:0867429168"
+                    className="flex items-center justify-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-sm font-semibold text-[#046DD6] active:bg-[#EBF4FF]"
+                >
+                    📞 0867 429 168
+                </a>
             </div>
         </div>
     );

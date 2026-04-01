@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:miniapp.zaloplatforms.com)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(xargs grep:*)",
+      "WebFetch(domain:developers.zalo.me)"
+    ]
+  }
+}

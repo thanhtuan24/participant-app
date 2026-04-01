@@ -379,6 +379,16 @@ export const getAppConfig = async (): Promise<{ mainTitle: string, enableRichFea
     }
 };
 
+export const getUserFromDB = async (userID: string): Promise<{ username: string; avatar: string; isMember: boolean } | null> => {
+    try {
+        const response = await fetch(`${HTTP_FUNCTION_URL}?getUser=true&userID=${encodeURIComponent(userID)}`);
+        if (!response.ok) return null;
+        return await response.json();
+    } catch {
+        return null;
+    }
+};
+
 export const checkMemberAccess = async (userID: string): Promise<boolean> => {
     try {
         const response = await fetch(`${HTTP_FUNCTION_URL}?checkMember=true&userID=${encodeURIComponent(userID)}`);

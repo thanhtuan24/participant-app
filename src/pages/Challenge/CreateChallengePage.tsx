@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PageLayout from "@components/layout/PageLayout";
 import { useStore } from "@store";
 import { useNavigate } from "react-router-dom";
 import { ChallengeMode } from "@dts";
+import { MemberItem } from "@service/adminService";
 
 const BET_OPTIONS = [
     { label: "☕ Cafe", value: "1 ly cafe" },
@@ -20,24 +21,49 @@ const makePlayer = (username: string) => ({
     avatar: "",
 });
 
+type PlayerState = { type: "text"; name: string } | { type: "member"; member: MemberItem };
+
 const PlayerInput: React.FC<{
     label: string;
-    value: string;
-    onChange: (v: string) => void;
+    player: PlayerState;
+    onChange: (p: PlayerState) => void;
     placeholder: string;
-}> = ({ label, value, onChange, placeholder }) => (
-    <label htmlFor={`player-${label}`} className="block">
+    members: MemberItem[];
+    isAdmin: boolean;
+}> = ({ label, player, onChange, placeholder, members, isAdmin }) => (
+    <div className="block">
         <span className="text-xs text-[#767A7F] mb-1 block">{label}</span>
-        <input
-            id={`player-${label}`}
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-[#141415] placeholder:text-[#B9BDC1] focus:outline-none focus:border-[#046DD6]"
-            maxLength={30}
-        />
-    </label>
+        {isAdmin && members.length > 0 ? (
+            <select
+                value={player.type === "member" ? player.member.userID : ""}
+                onChange={(e) => {
+                    const val = e.target.value;
+                    if (!val) {
+                        onChange({ type: "text", name: "" });
+                    } else {
+                        const m = members.find((m) => m.userID === val);
+                        if (m) onChange({ type: "member", member: m });
+                    }
+                }}
+                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-[#141415] focus:outline-none focus:border-[#046DD6]"
+            >
+                <option value="">-- Chọn thành viên --</option>
+                {members.filter(m => m.isMember).map((m) => (
+                    <option key={m.userID} value={m.userID}>{m.username}</option>
+                ))}
+            </select>
+        ) : (
+            <input
+                type="text"
+                value={player.type === "text" ? player.name : player.member.username}
+                onChange={(e) => onChange({ type: "text", name: e.target.value })}
+                placeholder={placeholder}
+                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-[#141415] placeholder:text-[#B9BDC1] focus:outline-none focus:border-[#046DD6]"
+                maxLength={30}
+                readOnly={player.type === "member"}
+            />
+        )}
+    </div>
 );
 
 const CreateChallengePage: React.FC = () => {
@@ -47,6 +73,17 @@ const CreateChallengePage: React.FC = () => {
         createNewChallenge: s.createNewChallenge,
         creatingChallenge: s.creatingChallenge,
     }));
+    const { isAdmin, members, fetchMembers } = useStore((s) => ({
+        isAdmin: s.isAdmin,
+        members: s.members,
+        fetchMembers: s.fetchMembers,
+    }));
+
+    useEffect(() => {
+        if (isAdmin && user?.id && members.length === 0) {
+            fetchMembers(user.id);
+        }
+    }, [isAdmin, user?.id]);
 
     const [name, setName] = useState("");
     const [mode, setMode] = useState<ChallengeMode>("manual");
@@ -60,24 +97,32 @@ const CreateChallengePage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
 
     // Team players (manual mode only)
-    const [t1p1, setT1p1] = useState("");
-    const [t1p2, setT1p2] = useState("");
-    const [t2p1, setT2p1] = useState("");
-    const [t2p2, setT2p2] = useState("");
+    const [t1p1, setT1p1] = useState<PlayerState>({ type: "text", name: "" });
+    const [t1p2, setT1p2] = useState<PlayerState>({ type: "text", name: "" });
+    const [t2p1, setT2p1] = useState<PlayerState>({ type: "text", name: "" });
+    const [t2p2, setT2p2] = useState<PlayerState>({ type: "text", name: "" });
 
     const isDoubles = type === "doubles";
     const isManual = mode === "manual";
     const betStake = BET_OPTIONS[betOption].value || customBet;
     const isCustomBet = BET_OPTIONS[betOption].value === "";
 
+    const getPlayerName = (p: PlayerState) =>
+        p.type === "member" ? p.member.username : p.name;
+
     const validatePlayers = (): string | null => {
-        if (!isManual) return null; // open mode: no player validation
-        if (!t1p1.trim()) return "Nhập tên người chơi đội 1";
-        if (!t2p1.trim()) return "Nhập tên người chơi đội 2";
-        if (isDoubles && !t1p2.trim()) return "Nhập tên người chơi thứ 2 đội 1";
-        if (isDoubles && !t2p2.trim()) return "Nhập tên người chơi thứ 2 đội 2";
+        if (!isManual) return null;
+        if (!getPlayerName(t1p1).trim()) return "Nhập tên người chơi đội 1";
+        if (!getPlayerName(t2p1).trim()) return "Nhập tên người chơi đội 2";
+        if (isDoubles && !getPlayerName(t1p2).trim()) return "Nhập tên người chơi thứ 2 đội 1";
+        if (isDoubles && !getPlayerName(t2p2).trim()) return "Nhập tên người chơi thứ 2 đội 2";
         return null;
     };
+
+    const buildPlayer = (p: PlayerState) =>
+        p.type === "member"
+            ? { userID: p.member.userID, username: p.member.username, avatar: p.member.avatar }
+            : makePlayer(p.name);
 
     const handleSubmit = async () => {
         setError(null);
@@ -106,10 +151,10 @@ const CreateChallengePage: React.FC = () => {
         };
 
         if (isManual) {
-            const team1Players = [makePlayer(t1p1)];
-            if (isDoubles) team1Players.push(makePlayer(t1p2));
-            const team2Players = [makePlayer(t2p1)];
-            if (isDoubles) team2Players.push(makePlayer(t2p2));
+            const team1Players = [buildPlayer(t1p1)];
+            if (isDoubles) team1Players.push(buildPlayer(t1p2));
+            const team2Players = [buildPlayer(t2p1)];
+            if (isDoubles) team2Players.push(buildPlayer(t2p2));
             payload.team1Players = team1Players;
             payload.team2Players = team2Players;
         }
@@ -231,9 +276,9 @@ const CreateChallengePage: React.FC = () => {
                             <div className="bg-white rounded-xl p-3 border border-blue-200">
                                 <p className="text-xs font-bold text-[#046DD6] mb-2">Đội 1</p>
                                 <div className="space-y-2">
-                                    <PlayerInput label="Đội 1 - VĐV 1" value={t1p1} onChange={setT1p1} placeholder="Tên VĐV 1" />
+                                    <PlayerInput label="Đội 1 - VĐV 1" player={t1p1} onChange={setT1p1} placeholder="Tên VĐV 1" members={members} isAdmin={isAdmin} />
                                     {isDoubles && (
-                                        <PlayerInput label="Đội 1 - VĐV 2" value={t1p2} onChange={setT1p2} placeholder="Tên VĐV 2" />
+                                        <PlayerInput label="Đội 1 - VĐV 2" player={t1p2} onChange={setT1p2} placeholder="Tên VĐV 2" members={members} isAdmin={isAdmin} />
                                     )}
                                 </div>
                             </div>
@@ -244,9 +289,9 @@ const CreateChallengePage: React.FC = () => {
                             <div className="bg-white rounded-xl p-3 border border-red-200">
                                 <p className="text-xs font-bold text-red-500 mb-2">Đội 2</p>
                                 <div className="space-y-2">
-                                    <PlayerInput label="Đội 2 - VĐV 1" value={t2p1} onChange={setT2p1} placeholder="Tên VĐV 1" />
+                                    <PlayerInput label="Đội 2 - VĐV 1" player={t2p1} onChange={setT2p1} placeholder="Tên VĐV 1" members={members} isAdmin={isAdmin} />
                                     {isDoubles && (
-                                        <PlayerInput label="Đội 2 - VĐV 2" value={t2p2} onChange={setT2p2} placeholder="Tên VĐV 2" />
+                                        <PlayerInput label="Đội 2 - VĐV 2" player={t2p2} onChange={setT2p2} placeholder="Tên VĐV 2" members={members} isAdmin={isAdmin} />
                                     )}
                                 </div>
                             </div>
@@ -351,7 +396,7 @@ const CreateChallengePage: React.FC = () => {
                         <span className="block text-sm font-semibold text-[#141415] mb-3">
                             📅 Ngày giờ thi đấu
                         </span>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-3">
                             <label htmlFor="challenge-date" className="block">
                                 <span className="text-xs text-[#767A7F] mb-1 block">Ngày</span>
                                 <input

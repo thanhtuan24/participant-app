@@ -77,6 +77,24 @@ export const updateChallengeScore = async (
     return res;
 };
 
+export const updateChallenge = async (
+    challengeId: string,
+    userID: string,
+    data: {
+        name?: string;
+        betStake?: string;
+        scheduledAt?: number | null;
+        scores?: { set: number; score1: number; score2: number }[];
+    },
+): Promise<Challenge> => {
+    const res = await requestParticipant<Challenge>(
+        "POST",
+        `${BASE}?action=updateChallenge`,
+        { challengeId, userID, ...data },
+    );
+    return res;
+};
+
 export const completeChallenge = async (
     challengeId: string,
     userID: string,

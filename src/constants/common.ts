@@ -1,6 +1,7 @@
 export const BASE_URL = import.meta.env.VITE_BASE_URL;
 export const MINI_APP_ID =
     window.APP_ID || (import.meta.env.VITE_MINI_APP_ID as string);
+export const OA_ID = import.meta.env.VITE_OA_ID as string;
 export const API = {
     GET_ORGANIZATION: "/get_organization_api",
     SEARCH_PROFILES: "/search_profiles_api",
